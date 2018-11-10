@@ -67,28 +67,8 @@ type ProcessReader struct {
 		fmt.Println(CDataFile2)
 		transferReaderData := make(chan ProcessReader) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir skaitymo proceso
 		transferWriterData := make(chan ProcessWriter) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir rasymo proceso
-		//managerW := make(chan DataStruct)              // kanalas tarp rasymo proceso ir valdytojo proceso
-		//managerR := make(chan DataStruct)              // kanalas tarp skaitymo proceso ir valdytojo proceso
 
-		//var wg sync.WaitGroup
-		//wg.Add(2)
 		go readFile( CDataFile2, transferWriterData, transferReaderData)//&wg,
-
-		/*for i := 0; i < CMaxProcessCount; i++ {
-			//wg.Add(1)
-			go rasytojas(transferWriterData, managerW, &wg)
-		}
-		for i := 0; i < CMaxProcessCount; i++ {
-			//wg.Add(1)
-			go skaitytojas(transferReaderData, managerR, &wg)
-		}
-		//wg.Add(1)
-		go func() {
-			defer wg.Done()
-			valdytojs(managerW, managerR, &BCommon)
-		}()*/
-
-		//wg.Wait()
 
 		printToFileResults(&BCommon, CResultFile)
 }
@@ -99,7 +79,10 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 	var processesWriters [CMaxProcessCount]ProcessWriter
 	var processesReaders [CMaxProcessCount]ProcessReader
 
-
+	var (
+		elementNr = 0
+		proccessNr = 0
+	)
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -114,6 +97,35 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 	for scanner.Scan() {
 		line := scanner.Text()
 		values := strings.Split(line, ";")
+
+		if proccessNr == writersCount && elementNr == CMaxDataCount {
+			break
+		}
+		if CMaxDataCount - 1 == elementNr && proccessNr < writersCount { //kai proceso paskutinis elementas
+			elementNr = 0
+			proccessNr++
+			kiekis, err := strconv.Atoi(values[0])
+			if  err != nil {
+				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
+			}
+			processesWriters[proccessNr].count = kiekis
+		} else {
+				if proccessNr <= writersCount && elementNr < CMaxDataCount {
+					year, err := strconv.Atoi(values[1])
+					if  err != nil {
+						fmt.Printf("year=%d, type: %T\n", year, year)
+					}
+					price, err := strconv.ParseFloat(values[2],64)
+					if  err != nil {
+						fmt.Printf("price=%f, type: %T\n", price, price)
+					}
+					processesWriters[proccessNr].data[elementNr] = Data{intData: year, stringData: values[0], doubleData: price}
+					elementNr++
+				}
+			}
+		}
+
+
 		for i := 0; i <= writersCount; i++ {
 			kiekis, err := strconv.Atoi(values[0])
 			if  err != nil {
@@ -122,6 +134,7 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 
 			processesWriters[i].count = kiekis
 			for j := 0; j < kiekis ; j++  {
+				var name = values[0]//name
 				year, err := strconv.Atoi(values[0])
 				if  err != nil {
 					fmt.Printf("year=%d, type: %T\n", year, year)
@@ -129,9 +142,9 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 
 				price, err := strconv.ParseFloat(values[1],64)
 				if  err != nil {
-					fmt.Printf("price=%d, type: %T\n", price, price)
+					fmt.Printf("price=%f, type: %T\n", price, price)
 				}
-				var name = values[2]//name
+
 				processesWriters[i].data[j] = Data{intData: year, stringData: name, doubleData: price}
 			}
 		}
