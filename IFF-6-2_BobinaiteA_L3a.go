@@ -42,7 +42,7 @@ type Data struct { //Automobilio klasė
 	doubleData float64
 }
 type DataStruct struct { //rikiavimo struktūros klasė
-	stringData string
+	intData int
 	count      int
 }
 
@@ -82,6 +82,7 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 	var (
 		elementNr = 0
 		proccessNr = 0
+		readProcessNr = 0
 	)
 
 	file, err := os.Open(fileName)
@@ -97,11 +98,24 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 	for scanner.Scan() {
 		line := scanner.Text()
 		values := strings.Split(line, ";")
-
-		if proccessNr == writersCount && elementNr == CMaxDataCount {
-			break
+		if proccessNr == 0 && elementNr == 0 { //pirma eilutė
+			kiekis, err := strconv.Atoi(values[0])
+			if  err != nil {
+				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
+			}
+			processesWriters[proccessNr].count = kiekis
+			proccessNr++
 		}
-		if CMaxDataCount - 1 == elementNr && proccessNr < writersCount { //kai proceso paskutinis elementas
+		if proccessNr == writersCount && processesWriters[proccessNr].count == elementNr{ //jei paskutinis writeriu visu elem, tada skaitom readerio kiekį
+			elementNr = 0
+			kiekis, err := strconv.Atoi(values[0])
+			if  err != nil {
+				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
+			}
+			processesWriters[proccessNr].count = kiekis
+			readProcessNr++
+		}
+		if processesWriters[proccessNr].count == elementNr && processesWriters[proccessNr].count != 0 && proccessNr < writersCount { //kai proceso paskutinis elementas
 			elementNr = 0
 			proccessNr++
 			kiekis, err := strconv.Atoi(values[0])
@@ -110,7 +124,7 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 			}
 			processesWriters[proccessNr].count = kiekis
 		} else {
-				if proccessNr <= writersCount && elementNr < CMaxDataCount {
+				if proccessNr <= writersCount && elementNr < processesWriters[proccessNr].count {
 					year, err := strconv.Atoi(values[1])
 					if  err != nil {
 						fmt.Printf("year=%d, type: %T\n", year, year)
@@ -123,51 +137,44 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 					elementNr++
 				}
 			}
-		}
 
 
-		for i := 0; i <= writersCount; i++ {
-			kiekis, err := strconv.Atoi(values[0])
-			if  err != nil {
-				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
+
+		if proccessNr == 5  { //tada nebe writers , o readers procesai
+			if readProcessNr == readersCount && processesReaders[readProcessNr].count == elementNr{ //jei paskutinis writeriu visu elem
+				break
 			}
-
-			processesWriters[i].count = kiekis
-			for j := 0; j < kiekis ; j++  {
-				var name = values[0]//name
-				year, err := strconv.Atoi(values[0])
+			if processesReaders[readProcessNr].count == elementNr && processesReaders[readProcessNr].count != 0 && readProcessNr < readersCount { //kai proceso paskutinis elementas
+				elementNr = 0
+				readProcessNr++
+				kiekis, err := strconv.Atoi(values[0])
 				if  err != nil {
-					fmt.Printf("year=%d, type: %T\n", year, year)
+					fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
 				}
+				processesReaders[readProcessNr].count = kiekis
+			} else {
+				if readProcessNr <= readersCount && elementNr < processesReaders[readProcessNr].count {
 
-				price, err := strconv.ParseFloat(values[1],64)
-				if  err != nil {
-					fmt.Printf("price=%f, type: %T\n", price, price)
+						intValue, err := strconv.Atoi(values[0])
+
+						if  err != nil {
+							fmt.Printf("intValue=%d, type: %T\n", intValue, intValue)
+						}
+
+					intValue1, err := strconv.Atoi(values[1])
+
+					if  err != nil {
+						fmt.Printf("intValue=%d, type: %T\n", intValue1, intValue1)
+					}
+						processesReaders[readProcessNr].data[elementNr] = DataStruct{intData: intValue, count: intValue1}
+					elementNr++
 				}
-
-				processesWriters[i].data[j] = Data{intData: year, stringData: name, doubleData: price}
-			}
-		}
-
-		for i := 0; i <= readersCount; i++ {
-			kiekis, err := strconv.Atoi(values[0])
-			if  err != nil {
-				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
-			}
-
-			processesReaders[i].count = kiekis
-			for j := 0; j < kiekis ; j++  {
-				intValue, err := strconv.Atoi(values[0])
-
-				if  err != nil {
-					fmt.Printf("intValue=%d, type: %T\n", intValue, intValue)
-				}
-
-				var stringValue = values[2]
-				processesReaders[i].data[j] = DataStruct{stringData: stringValue, count: intValue}
 			}
 		}
 	}
+
+
+
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
@@ -220,7 +227,7 @@ func printToFile(P [CMaxProcessCount]ProcessWriter, DS [CMaxProcessCount]Process
 		j := 0
 		for j < P[i].count {
 			lineNo++
-			f.WriteString(strconv.Itoa(lineNo) + "\r\t" + DS[i].data[j].stringData + "\r\t" + strconv.Itoa(DS[i].data[j].count) + "\r\n")
+			f.WriteString(strconv.Itoa(lineNo) + "\r\t" + strconv.Itoa(DS[i].data[j].intData) + "\r\t" + strconv.Itoa(DS[i].data[j].count) + "\r\n")
 			j++
 		}
 		i++
@@ -242,9 +249,9 @@ func printToFileResults(BCommon *Bstruct, resFileName string) {
 	lineNo = 0
 	j := 0
 	for j < BCommon.kiekElPridejo {
-		if B[j].stringData != "" {
+		if B[j].intData != 0 {
 			lineNo++
-			f.WriteString(strconv.Itoa(lineNo) + "\r\t" + B[j].stringData + "\r\t" + strconv.Itoa(B[j].count) + "\r\n")
+			f.WriteString(strconv.Itoa(lineNo) + "\r\t" +strconv.Itoa(B[j].intData) + "\r\t" + strconv.Itoa(B[j].count) + "\r\n")
 		}
 		j++
 	}
