@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
 )
 
 
@@ -37,9 +38,9 @@ type Bstruct struct {
 }
 
 type Data struct { //Automobilio klasė
-	stringData string
-	intData    int
-	doubleData float64
+	name string
+	year    int
+	price float64
 }
 type DataStruct struct { //rikiavimo struktūros klasė
 	intData int
@@ -65,112 +66,146 @@ type ProcessReader struct {
 		BCommon.kiekElPridejo = 0
 
 		fmt.Println(CDataFile2)
-		transferReaderData := make(chan ProcessReader) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir skaitymo proceso
-		transferWriterData := make(chan ProcessWriter) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir rasymo proceso
 
-		go readFile( CDataFile2, transferWriterData, transferReaderData)//&wg,
+		readFile( CDataFile2)
 
 		printToFileResults(&BCommon, CResultFile)
 }
 
 // surenka po duomenu struktura ir issiuncia skaitytojam/rasytojam
-func readFile(fileName string, transferWriter chan ProcessWriter, transferReader chan ProcessReader){//,wg *sync.WaitGroup  /*([CMaxProcessCount]ProcessWriter, [CMaxProcessCount]ProcessReader)*/ {
-
+func readFile(fileName string){
 	var processesWriters [CMaxProcessCount]ProcessWriter
 	var processesReaders [CMaxProcessCount]ProcessReader
 
 	var (
 		elementNr = 0
-		proccessNr = 0
-		readProcessNr = 0
+		readPElNr = 0
+		proccessNr = -1
+		readProcessNr = -1
 	)
 
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() {
-		if err = file.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+
 	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		values := strings.Split(line, ";")
-		if proccessNr == 0 && elementNr == 0 { //pirma eilutė
-			kiekis, err := strconv.Atoi(values[0])
-			if  err != nil {
-				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
-			}
-			processesWriters[proccessNr].count = kiekis
-			proccessNr++
-		}
-		if proccessNr == writersCount && processesWriters[proccessNr].count == elementNr{ //jei paskutinis writeriu visu elem, tada skaitom readerio kiekį
-			elementNr = 0
-			kiekis, err := strconv.Atoi(values[0])
-			if  err != nil {
-				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
-			}
-			processesWriters[proccessNr].count = kiekis
-			readProcessNr++
-		}
-		if processesWriters[proccessNr].count == elementNr && processesWriters[proccessNr].count != 0 && proccessNr < writersCount { //kai proceso paskutinis elementas
-			elementNr = 0
-			proccessNr++
-			kiekis, err := strconv.Atoi(values[0])
-			if  err != nil {
-				fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
-			}
-			processesWriters[proccessNr].count = kiekis
-		} else {
-				if proccessNr <= writersCount && elementNr < processesWriters[proccessNr].count {
-					year, err := strconv.Atoi(values[1])
-					if  err != nil {
-						fmt.Printf("year=%d, type: %T\n", year, year)
-					}
-					price, err := strconv.ParseFloat(values[2],64)
-					if  err != nil {
-						fmt.Printf("price=%f, type: %T\n", price, price)
-					}
-					processesWriters[proccessNr].data[elementNr] = Data{intData: year, stringData: values[0], doubleData: price}
-					elementNr++
-				}
-			}
+		for scanner.Scan() {
+			line := scanner.Text()
+			fmt.Println("Dabar line:")
+			fmt.Println(line) //spausdinuos line (veikia ok)
+			values := strings.Split(line, ";")
 
-
-
-		if proccessNr == 5  { //tada nebe writers , o readers procesai
-			if readProcessNr == readersCount && processesReaders[readProcessNr].count == elementNr{ //jei paskutinis writeriu visu elem
-				break
-			}
-			if processesReaders[readProcessNr].count == elementNr && processesReaders[readProcessNr].count != 0 && readProcessNr < readersCount { //kai proceso paskutinis elementas
-				elementNr = 0
-				readProcessNr++
+			if proccessNr == writersCount - 1 && processesWriters[proccessNr].count == elementNr && readProcessNr == -1{ //jei paskutinis writeriu visu elem, tada skaitom readerio kiekį
+				fmt.Println("Dabar proccessNr=writersCount, o elementNr = processesWriters[proccessNr].count - turi buti writers Proceso gale:")
+				fmt.Printf("elementNr = %d ", elementNr)
+				//	proccessNr++
+				fmt.Printf("proccessNr = %d ", proccessNr)
 				kiekis, err := strconv.Atoi(values[0])
-				if  err != nil {
+				if err != nil {
 					fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
 				}
+				fmt.Printf("kiekis: %d\n", kiekis)
+				readProcessNr++
 				processesReaders[readProcessNr].count = kiekis
+				fmt.Printf("processesReaders[readProcessNr].count = %d\n", processesReaders[readProcessNr].count)
+
+				//elementNr = 0
 			} else {
-				if readProcessNr <= readersCount && elementNr < processesReaders[readProcessNr].count {
-
-						intValue, err := strconv.Atoi(values[0])
-
-						if  err != nil {
-							fmt.Printf("intValue=%d, type: %T\n", intValue, intValue)
-						}
-
-					intValue1, err := strconv.Atoi(values[1])
-
-					if  err != nil {
-						fmt.Printf("intValue=%d, type: %T\n", intValue1, intValue1)
+				if  readProcessNr !=-1 { //jei perskaite visus writersEl tada nebe writers , o readers procesai //proccessNr == 4 && elementNr == processesWriters[proccessNr].count &&
+					if readProcessNr == readersCount-1 && processesReaders[readProcessNr-1].count == readPElNr{ //jei paskutinis writeriu visu elem
+						break
 					}
-						processesReaders[readProcessNr].data[elementNr] = DataStruct{intData: intValue, count: intValue1}
-					elementNr++
+					if processesReaders[readProcessNr].count == readPElNr && processesReaders[readProcessNr].count != 0 && readProcessNr < readersCount { //kai proceso paskutinis elementas
+						readPElNr = 0
+						readProcessNr++
+						fmt.Println("==============================================================================- turi buti kiekvieno readers Proceso prdzioje, iskyrus pirmą:")
+						fmt.Printf("readPElNr = %d ", readPElNr)
+						fmt.Printf("readProcessNr = %d ", readProcessNr)
+						kiekis, err := strconv.Atoi(values[0])
+						if  err != nil {
+							fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
+						}
+						processesReaders[readProcessNr].count = kiekis
+						fmt.Printf("processesReaders[proccessNr].count = %d\n", processesReaders[readProcessNr].count)
+					} else {
+						if readProcessNr < readersCount && readPElNr < processesReaders[readProcessNr].count {
+							fmt.Println("Dabar readProcessNr<readersCount, o readPElNr < processesReaders[readProcessNr].count")
+							fmt.Printf("readPElNr = %d ", readPElNr)
+							fmt.Printf("readProcessNr = %d ", readProcessNr)
+							//	fmt.Printf("name: %s ", values[0])
+							intValue, err := strconv.Atoi(values[0])
+
+							if  err != nil {
+								fmt.Printf("intValue=%d, type: %T\n", intValue, intValue)
+							}
+							fmt.Printf("intValue: %d ", intValue)
+							intValue1, err := strconv.Atoi(values[1])
+
+							if  err != nil {
+								fmt.Printf("intValue1=%d, type: %T\n", intValue1, intValue1)
+							}
+							fmt.Printf("intValue1: %d\n ", intValue1)
+							processesReaders[readProcessNr].data[readPElNr] = DataStruct{intData: intValue, count: intValue1}
+							readPElNr++
+						}
+					}
+				}
+			}//duomenų struktūros procesų skaitymas  ( tos,kur tik iš 2 laukų, o ne 3 sudaryta)
+
+			if proccessNr == -1 && elementNr == 0 { //pirma eilutė
+				kiekis, err := strconv.Atoi(values[0])
+				if err != nil {
+					fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
+				}
+				proccessNr++
+				fmt.Println("Dabar proccessNr=0 elementNr=0 - turi buti pati pirma eilute:")
+				fmt.Printf("elementNr = %d ", elementNr)
+				fmt.Printf("proccessNr = %d ", proccessNr)
+				fmt.Printf("kiekis: %d\n", kiekis)
+
+				processesWriters[proccessNr].count = kiekis
+				fmt.Printf("processesWriters[proccessNr].count = %d\n", processesWriters[proccessNr].count)
+
+			}  else { //niekad neateina i sita irgi
+				if processesWriters[proccessNr].count == elementNr && processesWriters[proccessNr].count != 0 && proccessNr < writersCount && readProcessNr == -1 { //kai proceso paskutinis elementas
+
+					proccessNr++
+					elementNr = 0
+					fmt.Println("Dabar proccessNr<writersCount, o elementNr = processesWriters[proccessNr].count - turi buti kiekvieno writers Proceso prdzioje:")
+					fmt.Printf("elementNr = %d ", elementNr)
+					fmt.Printf("proccessNr = %d ", proccessNr)
+					kiekis, err := strconv.Atoi(values[0])
+					if err != nil {
+						fmt.Printf("kiekis=%d, type: %T\n", kiekis, kiekis)
+					}
+					fmt.Printf("kiekis: %d\n", kiekis)
+					processesWriters[proccessNr].count = kiekis
+					fmt.Printf("processesWriters[proccessNr].count = %d\n", processesWriters[proccessNr].count)
+
+
+				} else {
+					if proccessNr < writersCount && elementNr < processesWriters[proccessNr].count && readProcessNr == -1{ //kol nuskaito visus elementus vieo proceso
+						fmt.Println("Dabar proccessNr<writersCount, o elementNr < processesWriters[proccessNr].count")
+						fmt.Printf("elementNr = %d ", elementNr)
+						fmt.Printf("proccessNr = %d ", proccessNr)
+						fmt.Printf("name: %s ", values[0])
+						year, err := strconv.Atoi(values[1])
+						if err != nil {
+							fmt.Printf("year=%d, type: %T\n", year, year)
+						}
+						fmt.Printf("year: %d ", year)
+						price1, err := strconv.ParseFloat(values[2], 128)
+						if err != nil {
+							fmt.Printf("price=%.2f, type: %T\n", price1, price1)
+						}
+						fmt.Printf("price1: %.2f\n", price1)
+						processesWriters[proccessNr].data[elementNr] = Data{name: values[0], year: year, price: price1}
+						elementNr++
+					}
 				}
 			}
-		}
+
 	}
 
 
@@ -181,7 +216,7 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 	printToFile(processesWriters, processesReaders, CResultFile)
 
 
-	//perduodam rasytojams
+/*	//perduodam rasytojams
 	for i := 0; i < CMaxProcessCount; i++ {
 		transferWriter <- processesWriters[i]
 	}
@@ -189,7 +224,7 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 	//perduodam skaitytojams
 	for i := 0; i < CMaxProcessCount; i++ {
 		transferReader <- processesReaders[i]
-	}
+	}*/
 	//defer wg.Done()
 }
 
@@ -198,19 +233,20 @@ func readFile(fileName string, transferWriter chan ProcessWriter, transferReader
 func printToFile(P [CMaxProcessCount]ProcessWriter, DS [CMaxProcessCount]ProcessReader, resFileName string) {
 	f, err := os.Create(resFileName)
 	check(err)
-	f.WriteString("-------------------------------------------\r\n")
+	f.WriteString("--------------------------------------------------------\r\n")
 	f.WriteString("============Pradiniai duomenys AUTOMOBILIS============== \r\n")
-	f.WriteString("-------------------------------------------\r\n")
+	f.WriteString("--------------------------------------------------------\r\n")
 
 	i := 0
 	lineNo := 0
 	for i < writersCount {
+		f.WriteString("--------------------------------------------------------\r\n")
 		f.WriteString("NR.    PAVADINIMAS             METAI      KAINA    \r\n")
 		f.WriteString("--------------------------------------------------------\r\n")
 		j := 0
 		for j < P[i].count {
 			lineNo++
-			f.WriteString(strconv.Itoa(lineNo) + "\r\t" + P[i].data[j].stringData + "\r\t" + strconv.Itoa(P[i].data[j].intData) + "\r\t" + strconv.FormatFloat(P[i].data[j].doubleData, 'f', 6, 64) + "\r\n")
+			f.WriteString(strconv.Itoa(lineNo) + "\t\t\t" + P[i].data[j].name + "\t\t\t" + strconv.Itoa(P[i].data[j].year) + "\t\t\t" + strconv.FormatFloat(P[i].data[j].price, 'f', 6, 64) + "\r\n")
 			j++
 		}
 		i++
@@ -222,12 +258,13 @@ func printToFile(P [CMaxProcessCount]ProcessWriter, DS [CMaxProcessCount]Process
 	i = 0
 	lineNo = 0
 	for i < readersCount {
-		f.WriteString("NR.    STRING              INT.      \r\n")
-		f.WriteString("-------------------------------------------\r\n")
+		f.WriteString("------------------------------\r\n")
+		f.WriteString("NR.    YEAR      INT      \r\n")
+		f.WriteString("------------------------------\r\n")
 		j := 0
-		for j < P[i].count {
+		for j < DS[i].count {
 			lineNo++
-			f.WriteString(strconv.Itoa(lineNo) + "\r\t" + strconv.Itoa(DS[i].data[j].intData) + "\r\t" + strconv.Itoa(DS[i].data[j].count) + "\r\n")
+			f.WriteString(strconv.Itoa(lineNo) + "\t" + strconv.Itoa(DS[i].data[j].intData) + "\t" + strconv.Itoa(DS[i].data[j].count) + "\r\n")
 			j++
 		}
 		i++
