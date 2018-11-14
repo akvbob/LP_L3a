@@ -9,27 +9,29 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
 )
 
 
 
-//const CDataFile1 string = "./IFF-6-2_BobinaiteA_L3a_dat_1.txt"
-const CDataFile2 string = "./IFF-6-2_BobinaiteA_L3a_dat_2.txt"
+const CDataFile1 string = "./IFF-6-2_BobinaiteA_L3a_dat_1.txt"
+//const CDataFile2 string = "./IFF-6-2_BobinaiteA_L3a_dat_2.txt"
 //const CDataFile3 string = "./IFF-6-2_BobinaiteA_L3a_dat_3.txt"
 const CResultFile string = "./IFF-6-2_BobinaiteA_L3a_rez.txt"
 
-const writersCount int = 3
-const readersCount int = 4
-
-
-
-
+const writersCount int = 4
+const readersCount int = 3
 const CMaxProcessCount = 5
 const CMaxDataCount = 10
 
-//var B [CMaxDataCount * CMaxProcessCount]DataStruct
-//var BCommon Bstruct
+
+var transferReaderData = make(chan ProcessReader) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir skaitymo proceso
+var transferWriterData = make(chan ProcessWriter) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir rasymo proceso
+var managerW = make(chan ChanStructure)              // kanalas tarp rasymo proceso ir valdytojo proceso
+var managerR = make(chan ChanStructure)              // kanalas tarp skaitymo proceso ir valdytojo proceso
+var EndChan = make(chan ChanStructure) //pabaigos kanalas
+var processesWriters [CMaxProcessCount]ProcessWriter
+var processesReaders [CMaxProcessCount]ProcessReader
+var wg sync.WaitGroup
 
 type Bstruct struct {
 	B             [CMaxDataCount * CMaxProcessCount]DataStruct
@@ -38,7 +40,7 @@ type Bstruct struct {
 	kiekElPridejo int
 }
 
-type Data struct { //Automobilio klasė
+type Car struct { //Automobilio klasė
 	name string
 	year    int
 	price float64
@@ -49,7 +51,7 @@ type DataStruct struct { //rikiavimo struktūros klasė
 }
 
 type ProcessWriter struct {
-	data [CMaxDataCount]Data
+	data [CMaxDataCount]Car
 	count int
 }
 type ProcessReader struct {
@@ -65,36 +67,26 @@ type ChanStructure struct {
 
 func main() {
 	fmt.Println("hello world")
-
+	fmt.Println(CDataFile1)
 	var BCommon = Bstruct{
 		kiekElPridejo: 0,
 	}
+	readFile(CDataFile1)//, &wg)
 
-
-	fmt.Println(CDataFile2)
-	transferReaderData := make(chan ProcessReader) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir skaitymo proceso
-	transferWriterData := make(chan ProcessWriter) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir rasymo proceso
-	managerW := make(chan ChanStructure)              // kanalas tarp rasymo proceso ir valdytojo proceso
-	managerR := make(chan ChanStructure)              // kanalas tarp skaitymo proceso ir valdytojo proceso
-	// readFile( CDataFile2, &BCommon)
-	EndChan := make(chan ChanStructure)
-
-	var wg sync.WaitGroup
-
-
-	wg.Add(1) //Laukiamų Done kreipinių kiekis - 2
-	go readFile(CDataFile2, transferWriterData, transferReaderData, &wg)
-
-	go func() {
+	wg.Add(1) //Laukiamų Done kreipinių kiekis - 1
+	go duomenuPerdavimoProc(transferWriterData, transferReaderData)
+	//wg.Add(1)
+	go func() { //valdytojas
+		//defer wg.Done()
 		for {
 			var activeChan  = [] chan ChanStructure{EndChan}
 			if BCommon.kiekElPridejo > 0 {
-				activeChan = append(activeChan, managerR)
+				activeChan = append(activeChan, managerR) //aktyus kanalas - trinimo
 			} else {
 				activeChan = append(activeChan, nil)
 			}
-			if BCommon.kiekElPridejo <100 {
-				activeChan = append(activeChan, managerW)
+			if BCommon.kiekElPridejo < CMaxDataCount * CMaxProcessCount {
+				activeChan = append(activeChan, managerW) //aktyvus kanalas - rašymo
 			}else {
 				activeChan = append(activeChan, nil)
 			}
@@ -108,34 +100,28 @@ func main() {
 			}
 			choice, _, _ := reflect.Select(cases)
 			var message = <- activeChan[choice]
-			switch  message.id {
-			case 0:
+			switch  message.id { //kuris kanalas perduoda žinutę
+			case 0: //pabaigos kanalas
 				break
-			case 1:
+			case 1: //rašymo kanalas
 				addToB(message, &BCommon)
-			case 2:
+			case 2: //skaitymo kanalas
 				arPasalino := removeFromB(message, &BCommon, managerR)
 				//fmt.Printf("ar pasalino" ,message.data, arPasalino)
 				fmt.Println(arPasalino)
 			}
 		}
 	}()
-	for i := 0; i < CMaxProcessCount; i++ {
+	for i := 0; i < CMaxProcessCount; i++ { //rasytojas perduoda valdytojui
 		wg.Add(1)
 		go rasytojas(transferWriterData, managerW, &wg)
 	}
 	//wg.Wait() //wait blokuojama, iki bus iškviestas laukiamas kiekis Done kreipinių
-	for i := 0; i < CMaxProcessCount; i++ {
+	for i := 0; i < CMaxProcessCount; i++ { //skaitytojas perduoda valdytojui duomenis
 		wg.Add(1)
+
 		go skaitytojas(transferReaderData, managerR, &wg)
 	}
-	//wg.Add(1)
-	/*go func() {
-		defer wg.Done() //WaitGroup objektui pranešama, kad užduotis įvykdyta (iškviečiant Done)
-		valdytojs(managerW, managerR, BCommon)
-	}()*/
-	//wg.Wait()
-
 
 	wg.Wait()
 	data1 := DataStruct{
@@ -150,7 +136,7 @@ func main() {
 //prideda viena duomenu eilute
 func addToB(data ChanStructure, BCommon *Bstruct) {
 	BCommon.lock.Lock()
-	fmt.Println(data.data.intData)
+	//fmt.Println(data.data.intData)
 
 	var index int
 	index = containsB(data.data.intData, BCommon)
@@ -161,8 +147,8 @@ func addToB(data ChanStructure, BCommon *Bstruct) {
 		BCommon.B[index] = DataStruct{intData: data.data.intData, count: 1}
 	}
 	BCommon.kiekElPridejo++
-	BCommon.cond.Broadcast() //pažadina visas GO paprogrames , laukiančios naudojantis cond
 
+	BCommon.cond.Broadcast() //pažadina visas GO paprogrames , laukiančios naudojantis cond
 	BCommon.lock.Unlock()
 }
 
@@ -200,13 +186,15 @@ func countOfB(BCommon *Bstruct) int {
 		}
 		j++
 	}
+	fmt.Println("Count: ")
+	fmt.Println(count)
 	return count
 }
 
 
 
 
-///==================================================Šalinimas=========================================================
+///==================================================Šalinimas iš bendro masyvo=========================================================
 //salina viena duomenu eilute
 func removeFromB(data ChanStructure, BCommon *Bstruct, managerR chan ChanStructure) bool { //)
 	var arPasalino bool
@@ -251,16 +239,25 @@ func rasytojas(writeris <-chan ProcessWriter,  managerW chan ChanStructure, wg *
 	a := <-writeris
 	data := a.data
 	for i := 0; i < CMaxDataCount; i++ {
-		data1 := DataStruct{
+		data1 := DataStruct{ //sukuriu DS iš dviejų laukų tą ir į ją įsidedu reikšmę iš ProcessWriter(rašytojų) duomenų struktūros(Data)
 			intData: data[i].year,
 			count: 1,
 		}
-		viens := ChanStructure{id: 1, data: data1 } //ar būtinai struktūrą visą reikia perduoti?????????????????????????????????????????????????????
+		viens := ChanStructure{id: 1, data: data1 }
+		fmt.Println("call add")
 		managerW <- viens //perduoda valdytojui duomenis
 	}
 
 }
-
+func duomenuPerdavimoProc(transferWriter chan ProcessWriter, transferReader chan ProcessReader) {
+	defer wg.Done()
+	for i := 0; i < CMaxProcessCount; i++ {
+		transferWriter <- processesWriters[i]
+	}
+	for i := 0; i < CMaxProcessCount; i++ {
+		transferReader <- processesReaders[i]
+	}
+}
 // skaitytojo proceso metodas
 func skaitytojas(readeris <-chan ProcessReader, managerR chan ChanStructure, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -271,7 +268,8 @@ func skaitytojas(readeris <-chan ProcessReader, managerR chan ChanStructure, wg 
 			intData: data[i].intData,
 			count: 1,
 		}
-		viens := ChanStructure{id: 1, data: data1 } //ar būtinai struktūrą visą reikia perduoti?????????????????????????????????????????????????????
+		viens := ChanStructure{id: 2, data: data1 } ///čia id turi būti 2 , bet su 2 kažkodėl deadlockina....
+		fmt.Println("call remove")
 		managerR <- viens //perduoda valdytojui duomenis
 	}
 }
@@ -281,12 +279,7 @@ func valdytojs(managerW chan DataStruct, managerR chan DataStruct, BCommon *Bstr
 
 }
 //=============================================================Skaitymas iš failo=======================================
-// surenka po duomenu struktura ir issiuncia skaitytojam/rasytojam
-func readFile(fileName string,transferWriter chan ProcessWriter, transferReader chan ProcessReader,wg *sync.WaitGroup){ //, BCommon *Bstruct
-	defer wg.Done()
-	var processesWriters [CMaxProcessCount]ProcessWriter
-	var processesReaders [CMaxProcessCount]ProcessReader
-
+func readFile(fileName string) ([CMaxProcessCount]ProcessWriter,[CMaxProcessCount]ProcessReader){
 	var (
 		elementNr = 0
 		readPElNr = 0
@@ -305,11 +298,7 @@ func readFile(fileName string,transferWriter chan ProcessWriter, transferReader 
 			values := strings.Split(line, ";")
 
 			if proccessNr == writersCount - 1 && processesWriters[proccessNr].count == elementNr && readProcessNr == -1{ //jei paskutinis writeriu visu elem, tada skaitom readerio kiekį
-				kiekis, err := strconv.Atoi(values[0])
-				if err != nil {
-					fmt.Printf("kiekis=%d, type: %T\n", kiekis,
-																kiekis)
-				}
+				kiekis, _ := strconv.Atoi(values[0])
 				readProcessNr++
 				processesReaders[readProcessNr].count = kiekis
 			} else {
@@ -320,26 +309,12 @@ func readFile(fileName string,transferWriter chan ProcessWriter, transferReader 
 					if processesReaders[readProcessNr].count == readPElNr && processesReaders[readProcessNr].count != 0 && readProcessNr < readersCount { //kai read proceso (DS) paskutinis elementas
 						readPElNr = 0
 						readProcessNr++
-						kiekis, err := strconv.Atoi(values[0])
-						if  err != nil {
-							fmt.Printf("kiekis=%d, type: %T\n", kiekis,
-																		kiekis)
-						}
+						kiekis, _ := strconv.Atoi(values[0])
 						processesReaders[readProcessNr].count = kiekis
 					} else {
 						if readProcessNr < readersCount && readPElNr < processesReaders[readProcessNr].count {
-							intValue, err := strconv.Atoi(values[0])
-							if  err != nil {
-								fmt.Printf("intValue=%d, type: %T\n", intValue,
-									                                         intValue)
-							}
-
-							intValue1, err := strconv.Atoi(values[1])
-							if  err != nil {
-								fmt.Printf("intValue1=%d, type: %T\n", intValue1,
-									                                          intValue1)
-							}
-
+							intValue, _ := strconv.Atoi(values[0])
+							intValue1, _ := strconv.Atoi(values[1])
 							processesReaders[readProcessNr].data[readPElNr] = DataStruct{intData: intValue,
 																						   count: intValue1}
 							//addToB(processesReaders[readProcessNr].data[readPElNr], BCommon)
@@ -350,37 +325,20 @@ func readFile(fileName string,transferWriter chan ProcessWriter, transferReader 
 			}
 
 			if proccessNr == -1 && elementNr == 0 { //pirma eilutė writer proceso
-				kiekis, err := strconv.Atoi(values[0])
-				if err != nil {
-					fmt.Printf("kiekis=%d, type: %T\n", kiekis,
-																kiekis)
-				}
+				kiekis, _ := strconv.Atoi(values[0])
 				proccessNr++
 				processesWriters[proccessNr].count = kiekis
 			}  else {  //kai writer proceso paskutinis elementas
 				if processesWriters[proccessNr].count == elementNr && processesWriters[proccessNr].count != 0 && proccessNr < writersCount && readProcessNr == -1 {
 					proccessNr++
 					elementNr = 0
-					kiekis, err := strconv.Atoi(values[0])
-					if err != nil {
-						fmt.Printf("kiekis=%d, type: %T\n", kiekis,
-																	kiekis)
-					}
+					kiekis, _ := strconv.Atoi(values[0])
 					processesWriters[proccessNr].count = kiekis
-				} else { //kol nuskaito visus elementus vieno writre proceso
+				} else { //kol nuskaito visus elementus vieno writer proceso
 					if proccessNr < writersCount && elementNr < processesWriters[proccessNr].count && readProcessNr == -1{
-						year, err := strconv.Atoi(values[1])
-						if err != nil {
-							fmt.Printf("year=%d, type: %T\n", year,
-								                                     year)
-						}
-
-						price1, err := strconv.ParseFloat(values[2], 128)
-						if err != nil {
-							fmt.Printf("price=%.2f, type: %T\n", price1,
-								                                        price1)
-						}
-						processesWriters[proccessNr].data[elementNr] = Data{name: values[0],
+						year, _ := strconv.Atoi(values[1])
+						price1, _ := strconv.ParseFloat(values[2], 128)
+						processesWriters[proccessNr].data[elementNr] = Car{name: values[0],
 																			 year: year,
 																			 price: price1}
 						elementNr++
@@ -393,14 +351,7 @@ func readFile(fileName string,transferWriter chan ProcessWriter, transferReader 
 		log.Fatal(err)
 	}
 	printToFile(processesWriters, processesReaders, CResultFile)
-	for i := 0; i < CMaxProcessCount; i++ {
-		transferWriter <- processesWriters[i]
-	}
-	//defer wg.Done()
-	for i := 0; i < CMaxProcessCount; i++ {
-		transferReader <- processesReaders[i]
-	}
-
+	return processesWriters,processesReaders
 }
 
 //==============================================Rašymas į failą=========================================================

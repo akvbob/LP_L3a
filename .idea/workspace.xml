@@ -4,7 +4,9 @@
     <list default="true" id="11c1de55-1664-4a9b-b633-e4c16d0d752d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a.go" beforeDir="false" afterPath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_1.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_2.txt" beforeDir="false" afterPath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_2.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_3.txt" beforeDir="false" afterPath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_3.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_rez.txt" beforeDir="false" afterPath="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_rez.txt" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -27,50 +29,49 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="go" value="6" />
+          <entry key="go" value="7" />
           <entry key="txt" value="8" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Go" value="6" />
+          <entry key="Go" value="7" />
           <entry key="PLAIN_TEXT" value="8" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="go" value="6621" />
-          <entry key="txt" value="66" />
+          <entry key="go" value="7505" />
+          <entry key="txt" value="110" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Go" value="6621" />
-          <entry key="PLAIN_TEXT" value="66" />
+          <entry key="Go" value="7505" />
+          <entry key="PLAIN_TEXT" value="110" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.go.postfix.template.usages.trigger">
         <counts>
-          <entry key=".println" value="1" />
+          <entry key=".println" value="2" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="187">
-              <caret line="21" column="26" selection-start-line="21" selection-start-column="26" selection-end-line="21" selection-end-column="26" />
-              <folding>
-                <element signature="e#2179#2190#0" />
-                <element signature="e#2236#2247#0" />
-                <element signature="e#2366#2368#0" />
-                <element signature="e#2413#2462#0" />
-              </folding>
+            <state relative-caret-position="208">
+              <caret line="236" column="74" selection-start-line="236" selection-start-column="61" selection-end-line="236" selection-end-column="74" />
             </state>
           </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Downloads/hello.go">
+          <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
@@ -85,17 +86,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_1.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="34">
-              <caret line="2" column="17" selection-start-line="2" selection-start-column="17" selection-end-line="2" selection-end-column="17" />
+            <state relative-caret-position="408">
+              <caret line="24" column="7" lean-forward="true" selection-end-line="24" selection-end-column="7" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_2.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="31" column="2" lean-forward="true" selection-start-line="31" selection-start-column="2" selection-end-line="31" selection-end-column="2" />
+            <state relative-caret-position="187">
+              <caret line="11" column="19" lean-forward="true" selection-start-line="11" selection-start-column="19" selection-end-line="11" selection-end-column="19" />
             </state>
           </provider>
         </entry>
@@ -103,8 +104,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_3.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="952">
-              <caret line="56" column="7" selection-start-line="56" selection-start-column="7" selection-end-line="56" selection-end-column="7" />
+            <state relative-caret-position="391">
+              <caret line="23" column="7" selection-start-line="23" selection-start-column="7" selection-end-line="23" selection-end-column="7" />
             </state>
           </provider>
         </entry>
@@ -112,8 +113,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_rez.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-119">
-              <caret line="62" column="25" lean-forward="true" selection-start-line="62" selection-start-column="25" selection-end-line="62" selection-end-column="25" />
+            <state relative-caret-position="173">
+              <caret line="41" column="26" selection-start-line="41" selection-start-column="26" selection-end-line="41" selection-end-column="26" />
             </state>
           </provider>
         </entry>
@@ -129,19 +130,11 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Bcommon</find>
-      <find>BCommon</find>
-      <find>add</find>
-      <find>wait</find>
-      <find>wg.Wait()</find>
-      <find>cond</find>
       <find>rasytojas</find>
       <find>managerW</find>
       <find>DataStruct</find>
       <find>removeFromB</find>
       <find>skaitytojas</find>
-      <find>addToB</find>
-      <find>ChanStructure</find>
       <find>wg</find>
       <find>1998</find>
       <find>1996</find>
@@ -159,6 +152,14 @@
       <find>2012</find>
       <find>2014</find>
       <find>2015</find>
+      <find>addToB</find>
+      <find>fmt</find>
+      <find>done</find>
+      <find>add</find>
+      <find>go</find>
+      <find>Data</find>
+      <find>check</find>
+      <find>ChanStructure</find>
     </findStrings>
   </component>
   <component name="GOROOT" path="C:\Go" />
@@ -169,10 +170,10 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_rez.txt.go" />
+        <option value="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_2.txt" />
         <option value="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_1.txt" />
         <option value="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_3.txt" />
         <option value="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a.go" />
-        <option value="$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_2.txt" />
       </list>
     </option>
   </component>
@@ -183,10 +184,10 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="76" />
-    <option name="y" value="472" />
-    <option name="width" value="1750" />
-    <option name="height" value="970" />
+    <option name="x" value="67" />
+    <option name="y" value="53" />
+    <option name="width" value="1938" />
+    <option name="height" value="1048" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -263,14 +264,14 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.4425532" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.0" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39858156" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32765958" />
       <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Terminal" order="9" weight="0.22695035" />
+      <window_info anchor="bottom" id="Terminal" order="9" weight="0.60141844" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -306,20 +307,6 @@
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_rez.txt.go" />
-    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_3.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="952">
-          <caret line="56" column="7" selection-start-line="56" selection-start-column="7" selection-end-line="56" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_1.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="17" selection-start-line="2" selection-start-column="17" selection-end-line="2" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Downloads/file.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="816">
@@ -327,30 +314,41 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_rez.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-119">
-          <caret line="62" column="25" lean-forward="true" selection-start-line="62" selection-start-column="25" selection-end-line="62" selection-end-column="25" />
-        </state>
-      </provider>
+    <entry file="file://$USER_HOME$/Downloads/hello.go">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a.go">
+    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_1.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="21" column="26" selection-start-line="21" selection-start-column="26" selection-end-line="21" selection-end-column="26" />
-          <folding>
-            <element signature="e#2179#2190#0" />
-            <element signature="e#2236#2247#0" />
-            <element signature="e#2366#2368#0" />
-            <element signature="e#2413#2462#0" />
-          </folding>
+        <state relative-caret-position="408">
+          <caret line="24" column="7" lean-forward="true" selection-end-line="24" selection-end-column="7" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_2.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="31" column="2" lean-forward="true" selection-start-line="31" selection-start-column="2" selection-end-line="31" selection-end-column="2" />
+        <state relative-caret-position="187">
+          <caret line="11" column="19" lean-forward="true" selection-start-line="11" selection-start-column="19" selection-end-line="11" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_dat_3.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="391">
+          <caret line="23" column="7" selection-start-line="23" selection-start-column="7" selection-end-line="23" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a_rez.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="173">
+          <caret line="41" column="26" selection-start-line="41" selection-start-column="26" selection-end-line="41" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/IFF-6-2_BobinaiteA_L3a.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="208">
+          <caret line="236" column="74" selection-start-line="236" selection-start-column="61" selection-end-line="236" selection-end-column="74" />
         </state>
       </provider>
     </entry>
