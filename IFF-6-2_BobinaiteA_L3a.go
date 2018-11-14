@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,7 +19,7 @@ const CDataFile2 string = "./IFF-6-2_BobinaiteA_L3a_dat_2.txt"
 //const CDataFile3 string = "./IFF-6-2_BobinaiteA_L3a_dat_3.txt"
 const CResultFile string = "./IFF-6-2_BobinaiteA_L3a_rez.txt"
 
-const writersCount int = 5
+const writersCount int = 3
 const readersCount int = 4
 
 
@@ -32,8 +33,8 @@ const CMaxDataCount = 10
 
 type Bstruct struct {
 	B             [CMaxDataCount * CMaxProcessCount]DataStruct
-	lock          sync.Mutex
-	cond          sync.Cond
+	lock          sync.Mutex //kritinės sekcijos apsaugai
+	cond          sync.Cond //realizuoti sąlyginę sinchronizaciją - naudojantis COnd galima laukti įvykio ir pranešti apie įvykusį įvykį
 	kiekElPridejo int
 }
 
@@ -56,61 +57,111 @@ type ProcessReader struct {
 	count int
 }
 
-
+type ChanStructure struct {
+	id int
+	data DataStruct
+}
 
 
 func main() {
 	fmt.Println("hello world")
 
-	var BCommon Bstruct
-	BCommon.kiekElPridejo = 0
+	var BCommon = Bstruct{
+		kiekElPridejo: 0,
+	}
+
 
 	fmt.Println(CDataFile2)
 	transferReaderData := make(chan ProcessReader) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir skaitymo proceso
 	transferWriterData := make(chan ProcessWriter) // perdavimo kanalas tarp failo skaitymo(duomenu perdavimo) ir rasymo proceso
-	managerW := make(chan DataStruct)              // kanalas tarp rasymo proceso ir valdytojo proceso
-	managerR := make(chan DataStruct)              // kanalas tarp skaitymo proceso ir valdytojo proceso
+	managerW := make(chan ChanStructure)              // kanalas tarp rasymo proceso ir valdytojo proceso
+	managerR := make(chan ChanStructure)              // kanalas tarp skaitymo proceso ir valdytojo proceso
 	// readFile( CDataFile2, &BCommon)
-
+	EndChan := make(chan ChanStructure)
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+
+
+	wg.Add(1) //Laukiamų Done kreipinių kiekis - 2
 	go readFile(CDataFile2, transferWriterData, transferReaderData, &wg)
 
+	go func() {
+		for {
+			var activeChan  = [] chan ChanStructure{EndChan}
+			if BCommon.kiekElPridejo > 0 {
+				activeChan = append(activeChan, managerR)
+			} else {
+				activeChan = append(activeChan, nil)
+			}
+			if BCommon.kiekElPridejo <100 {
+				activeChan = append(activeChan, managerW)
+			}else {
+				activeChan = append(activeChan, nil)
+			}
+
+			var cases [] reflect.SelectCase
+			for _, c := range activeChan {
+				cases = append(cases, reflect.SelectCase {
+					Dir: reflect.SelectRecv,
+					Chan: reflect.ValueOf(c),
+				})
+			}
+			choice, _, _ := reflect.Select(cases)
+			var message = <- activeChan[choice]
+			switch  message.id {
+			case 0:
+				break
+			case 1:
+				addToB(message, &BCommon)
+			case 2:
+				arPasalino := removeFromB(message, &BCommon, managerR)
+				//fmt.Printf("ar pasalino" ,message.data, arPasalino)
+				fmt.Println(arPasalino)
+			}
+		}
+	}()
 	for i := 0; i < CMaxProcessCount; i++ {
 		wg.Add(1)
 		go rasytojas(transferWriterData, managerW, &wg)
 	}
+	//wg.Wait() //wait blokuojama, iki bus iškviestas laukiamas kiekis Done kreipinių
 	for i := 0; i < CMaxProcessCount; i++ {
 		wg.Add(1)
 		go skaitytojas(transferReaderData, managerR, &wg)
 	}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		valdytojs(managerW, managerR, &BCommon)
-	}()
+	//wg.Add(1)
+	/*go func() {
+		defer wg.Done() //WaitGroup objektui pranešama, kad užduotis įvykdyta (iškviečiant Done)
+		valdytojs(managerW, managerR, BCommon)
+	}()*/
+	//wg.Wait()
+
 
 	wg.Wait()
+	data1 := DataStruct{
+		intData:0,
+		count: 0,
+	}
+	EndChan <- ChanStructure{0,data1}
 	printToFileResults(&BCommon, CResultFile)
 }
 
 //====================================================Dėjimas į Bendrą masyvą B=========================================
 //prideda viena duomenu eilute
-func addToB(data DataStruct, BCommon *Bstruct) {
+func addToB(data ChanStructure, BCommon *Bstruct) {
 	BCommon.lock.Lock()
-	fmt.Println(data.intData)
+	fmt.Println(data.data.intData)
 
 	var index int
-	index = containsB(data.intData, BCommon)
+	index = containsB(data.data.intData, BCommon)
 	if index >= 0 {
 		BCommon.B[index].count++
 	} else {
-		index = findAndMakePlace(data.intData, BCommon)
-		BCommon.B[index] = DataStruct{intData: data.intData, count: 1}
+		index = findAndMakePlace(data.data.intData, BCommon)
+		BCommon.B[index] = DataStruct{intData: data.data.intData, count: 1}
 	}
 	BCommon.kiekElPridejo++
-	BCommon.cond.Broadcast()
+	BCommon.cond.Broadcast() //pažadina visas GO paprogrames , laukiančios naudojantis cond
 
 	BCommon.lock.Unlock()
 }
@@ -157,14 +208,14 @@ func countOfB(BCommon *Bstruct) int {
 
 ///==================================================Šalinimas=========================================================
 //salina viena duomenu eilute
-func removeFromB(data DataStruct, BCommon *Bstruct, managerR chan DataStruct) bool { //)
+func removeFromB(data ChanStructure, BCommon *Bstruct, managerR chan ChanStructure) bool { //)
 	var arPasalino bool
 	arPasalino = false
 	BCommon.lock.Lock()
 	var index int
-	index = containsB(data.intData, BCommon)
-	if index >= 0 && BCommon.B[index].count > data.count {
-		BCommon.B[index].count = BCommon.B[index].count - data.count
+	index = containsB(data.data.intData, BCommon)
+	if index >= 0 && BCommon.B[index].count > data.data.count {
+		BCommon.B[index].count = BCommon.B[index].count - data.data.count
 		arPasalino = true
 	} else {
 		if index >= 0 {
@@ -175,8 +226,8 @@ func removeFromB(data DataStruct, BCommon *Bstruct, managerR chan DataStruct) bo
 			}
 			BCommon.B[j].intData = 0
 			BCommon.B[j].count = 0
+			BCommon.kiekElPridejo--
 			arPasalino = true
-
 		}
 	}
 	// jei pasalinti nepavyko, bet visi duomenys buvo prideti
@@ -195,48 +246,44 @@ func removeFromB(data DataStruct, BCommon *Bstruct, managerR chan DataStruct) bo
 
 //===========================================Procesai===================================================================
 // rasytojo proceso metodas
-func rasytojas(writeris <-chan ProcessWriter,  managerW chan DataStruct, wg *sync.WaitGroup) {
+func rasytojas(writeris <-chan ProcessWriter,  managerW chan ChanStructure, wg *sync.WaitGroup) {
+	defer wg.Done()
 	a := <-writeris
 	data := a.data
 	for i := 0; i < CMaxDataCount; i++ {
-		viens := DataStruct{count: 1, intData: data[i].year} //ar būtinai struktūrą visą reikia perduoti?????????????????????????????????????????????????????
+		data1 := DataStruct{
+			intData: data[i].year,
+			count: 1,
+		}
+		viens := ChanStructure{id: 1, data: data1 } //ar būtinai struktūrą visą reikia perduoti?????????????????????????????????????????????????????
 		managerW <- viens //perduoda valdytojui duomenis
 	}
-	defer wg.Done()
+
 }
 
 // skaitytojo proceso metodas
-func skaitytojas(readeris <-chan ProcessReader, managerR chan DataStruct, wg *sync.WaitGroup) {
+func skaitytojas(readeris <-chan ProcessReader, managerR chan ChanStructure, wg *sync.WaitGroup) {
+	defer wg.Done()
 	a := <-readeris
 	data := a.data
 	for i := 0; i < CMaxDataCount; i++ {
-		managerR <- data[i]
+		data1 := DataStruct{
+			intData: data[i].intData,
+			count: 1,
+		}
+		viens := ChanStructure{id: 1, data: data1 } //ar būtinai struktūrą visą reikia perduoti?????????????????????????????????????????????????????
+		managerR <- viens //perduoda valdytojui duomenis
 	}
-	defer wg.Done()
 }
 
 // valdytojo proceso metodas
 func valdytojs(managerW chan DataStruct, managerR chan DataStruct, BCommon *Bstruct) {
-	for {
-		select {
-		case data := <-managerW:
-			addToB(data, BCommon)
-		case data := <-managerR:
-			arPasalino := removeFromB(data, BCommon, managerR)
-			fmt.Printf("%d ar pasalino %s\n" ,data.intData,  strconv.FormatBool(arPasalino))
-			// nuo cia jei uzkomentuoju, tai veikia,
-			// bet ne viska pasalina, nes tarkim 25 el nori salint, bet jo strukturoj dar nera
-			// tai nepasalina
-			// bet jei palieku taip, tai gaunu
-			/*if !arPasalino {
-				fmt.Printf("%d ar pasalino %s\n" ,data.intData,  strconv.FormatBool(arPasalino))
-			}*/
-		}
-	}
+
 }
 //=============================================================Skaitymas iš failo=======================================
 // surenka po duomenu struktura ir issiuncia skaitytojam/rasytojam
 func readFile(fileName string,transferWriter chan ProcessWriter, transferReader chan ProcessReader,wg *sync.WaitGroup){ //, BCommon *Bstruct
+	defer wg.Done()
 	var processesWriters [CMaxProcessCount]ProcessWriter
 	var processesReaders [CMaxProcessCount]ProcessReader
 
@@ -349,11 +396,11 @@ func readFile(fileName string,transferWriter chan ProcessWriter, transferReader 
 	for i := 0; i < CMaxProcessCount; i++ {
 		transferWriter <- processesWriters[i]
 	}
-	defer wg.Done()
+	//defer wg.Done()
 	for i := 0; i < CMaxProcessCount; i++ {
 		transferReader <- processesReaders[i]
 	}
-	defer wg.Done()
+
 }
 
 //==============================================Rašymas į failą=========================================================
